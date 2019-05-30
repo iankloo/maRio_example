@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Plumber Dashboard</title>
+  </head>
+  <body>
+  <style>
+    .c3-axis-y text {
+      font-size: 16px; //change the size of the fonts
+    }
+
+    .c3-axis-x text {
+      font-size: 16px; //change the size of the fonts
+    }
+  </style>
+
+
+  <link href="src/css/c3.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+  <script src="src/js/c3.min.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<center><h1 style = 'margin-bottom: 50px'>Plotting mtcars with C3.js and Plumber</h1></center>
+<div class="row">
+  <div class="col-sm-2">
+    <center>
+      <br><br><br><br>
+      <label for="dropdown_y"> y Axis </label>
+      <select id="dropdown_y"></select>
+    </center>
+  </div>
+  <div class="col-sm-10">
+    <center>
+      <div style = 'margin-right: 20%' id="chart"></div>
+      <label for="dropdown"> x Axis </label>
+      <select style = 'margin-left: 5px; margin-right: 20%; margin-top: 100px' id="dropdown"></select>
+    </center>
+  </div>
+</div>
+
+<script>
+
+  //hit api for options and make dropdowns
+  $.ajax({
+      type: "GET",
+      url: 'http://127.0.0.1:9059/mycols',
+      success: function(data){
+          helpers.buildDropdown(
+              data,
+              $('#dropdown'),
+              'Select an option',
+              1
+          );
+          helpers.buildDropdown(
+              data,
+              $('#dropdown_y'),
+              'Select an option',
+              2
+          );
+
+          x_sel = $("#dropdown :selected").text();
+          y_sel = $("#dropdown_y :selected").text();
+
+          helpers.buildChart(x_sel, y_sel)
+      }
+  });
+
+  //listen for change in dropdown
+  $("#dropdown").change(function () {
+    x_sel = $("#dropdown :selected").text();
+    y_sel = $("#dropdown_y :selected").text();
+
+    helpers.buildChart(x_sel, y_sel)
+  });
+  $("#dropdown_y").change(function () {
+    x_sel = $("#dropdown :selected").text();
+    y_sel = $("#dropdown_y :selected").text();
+
+    helpers.buildChart(x_sel, y_sel)
+  });
+
+  var helpers = {
+    buildDropdown: function(result, dropdown, emptyMessage, startval){
+        // Remove current options
+        dropdown.html('');
+        // Add the empty option with the empty message
+        dropdown.append('<option value="">' + emptyMessage + '</option>');
+        // Check result isnt empty
+        if(result != '')
+        {
+            // Loop through each of the results and append the option to the dropdown
+            $.each(result, function(k, v) {
+                dropdown.append('<option value="' + v.id + '">' + v.name + '</option>');
+            });
+
+            dropdown.val(startval);
+        }
+    },
+
+    buildChart: function(x_sel, y_sel){
+      myurl = 'http://127.0.0.1:9059/mydata?xvar=' + x_sel + '&yvar=' + y_sel
+
+      //console.log(myurl)
+      z = y_sel
+
+        $.ajax({
+        url: myurl,
+        type: "GET",
+        dataType: "json",
+        success: function (data) {
+          if(y_sel == x_sel){
+            y_sel = x_sel + '.1'
+          }
+
+          var chart = c3.generate({
+            padding: {
+                bottom: 12,
+            },
+            data: {
+                json: data,
+                type: 'scatter',
+                xs: {[y_sel]: x_sel}
+            },
+            axis: {
+              x: {
+                tick: {
+                  fit: false
+                },
+                label: {
+                  text: x_sel,
+                  position: 'outer-center'
+                },
+              },
+              y: {
+                label: {
+                  text: y_sel,
+                  position: 'outer-middle'
+                }
+              }
+            },
+            legend: {
+              show: false
+            },
+            point: {
+              r: 5
+            },
+
+          });
+        }
+      });
+    }
+  }
+
+</script>
+
+  </body>
+</html>
